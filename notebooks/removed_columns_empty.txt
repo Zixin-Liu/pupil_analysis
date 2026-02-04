@@ -1,0 +1,27 @@
+Average calibration accuracy [mm]
+Average calibration precision SD [mm]
+Average calibration precision RMS [mm]
+Average calibration accuracy [°]
+Average calibration precision SD [°]
+Average calibration precision RMS [°]
+Average calibration accuracy [px]
+Average calibration precision SD [px]
+Average calibration precision RMS [px]
+Event value
+Gaze point X [MCS norm]
+Gaze point Y [MCS norm]
+Gaze point left X [MCS norm]
+Gaze point left Y [MCS norm]
+Gaze point right X [MCS norm]
+Gaze point right Y [MCS norm]
+Presented Stimulus name
+Presented Media name
+Presented Media width [px]
+Presented Media height [px]
+Presented Media position X [DACS px]
+Presented Media position Y [DACS px]
+Original Media width [px]
+Original Media height [px]
+Fixation point X [MCS norm]
+Fixation point Y [MCS norm]
+Ungrouped
