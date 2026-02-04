@@ -1,7 +1,8 @@
-import pandas as pd
+
 import polars as pl
 
 from pathlib import Path
+
 
 def remove_empty_columns_tobii(
     input_tsv,
@@ -44,36 +45,26 @@ def remove_empty_columns_tobii(
     output_tsv = output_dir / f"{stem_slice}{suffix}.tsv"
 
 
-    # ---- load TSV ----
-    df = pd.read_csv(input_tsv, sep="\t", low_memory=False)
-
+    # ---- load TSV with Polars ----
+    df = pl.read_csv(input_tsv, separator="\t")
+    
     # ---- find fully empty columns ----
-    removed_columns = [
-        col for col in df.columns
-        if df[col].replace("", pd.NA).isna().all()
-    ]
+    removed_columns = [col for col in df.columns if df[col].null_count() == df.height]
 
+    
     # ---- drop empty columns ----
-    df_clean = df.drop(columns=removed_columns)
-
+    df_clean = df.drop(removed_columns)
+    
     # ---- save cleaned TSV ----
-    df_clean.to_csv(output_tsv, sep="\t", index=False)
+    df_clean.write_csv(output_tsv, separator="\t")
 
-    # ---- optional logging ----
-    if save_removed_list and removed_columns:
-        log_file = output_dir / f"{input_tsv.stem}{suffix}_removed_columns.txt"
-        with open(log_file, "w") as f:
-            for col in removed_columns:
-                f.write(col + "\n")
    
 
     print(
         f"[Step 1] {input_tsv.name}: "
-        f"removed {len(removed_columns)} empty columns "
-        f"→ {df_clean.shape[1]} columns remain"
     )
 
-    return output_tsv, removed_columns
+    return output_tsv
 
 
 
@@ -175,7 +166,7 @@ def extract_relevant_rows_2(
     stem_slice = input_tsv.stem[:5]
     
     if output_dir is None:
-        output_dir = input_tsv.parent / "preprocessed" / stem_slice
+        output_dir = input_tsv.parent.parent / "preprocessed" / stem_slice
     else:
         output_dir = Path(output_dir) / "preprocessed" / stem_slice
 
