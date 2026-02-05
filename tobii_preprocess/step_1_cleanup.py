@@ -110,27 +110,22 @@ def extract_relevant_rows_1(
     # ---- trim rows before first event ----
     df_trimmed = df.filter(pl.col("row_nr") >= first_event_idx).drop("row_nr")
 
-    # ---- remove metadata columns ----
+    # ---- keep metadata columns ----
     metadata_cols = [
-        "Sensor",
-        "Project name",
-        "Participant name",
-        "Recording name",
-        "Recording date",
-        "Recording start time",
-        "Recording duration [ms]",
-        "Recording resolution height [px]",
-        "Recording resolution width [px]",
-        "Recording monitor latency [ms]",
-        "Computer timestamp [μs]",
-        "Eyetracker timestamp [μs]",
-        "Eye movement type index",
-        
-        
+        "Recording timestamp [μs]",
+        "Event",
+        "Pupil diameter left [mm]",
+        "Pupil diameter right [mm]",
+        "Eye position left Z [DACS mm]",
+        "Eye position right Z [DACS mm]",
+        "Gaze point left X [DACS mm]",
+        "Gaze point left Y [DACS mm]",
+        "Gaze point right X [DACS mm]",
+        "Gaze point right Y [DACS mm]"
     ]
 
-    cols_to_drop = [c for c in metadata_cols if c in df_trimmed.columns]
-    df_trimmed = df_trimmed.drop(cols_to_drop)
+    cols_to_keep = [c for c in df_trimmed.columns if c not in metadata_cols]
+    df_trimmed = df_trimmed.loc[:, cols_to_keep]
 
     # ---- save cleaned TSV ----
     df_trimmed.write_csv(output_tsv, separator="\t")
@@ -138,7 +133,6 @@ def extract_relevant_rows_1(
     print(
         f"[Step 2] {input_tsv.name}: "
         f"rows before '{first_event_value}' removed | "
-        f"dropped {len(cols_to_drop)} metadata columns"
     )
 
     return output_tsv
