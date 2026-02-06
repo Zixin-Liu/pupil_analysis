@@ -55,6 +55,9 @@ def remove_empty_columns_tobii(
     # ---- drop empty columns ----
     df_clean = df.drop(removed_columns)
     
+    # ---- swap decimal separators ----
+    df_clean = swap_decimal_separators(df_clean)
+    
     # ---- save cleaned TSV ----
     df_clean.write_csv(output_tsv, separator="\t")
 
@@ -78,7 +81,7 @@ def extract_relevant_rows_1(
     """
     Step 2.1 of Tobii preprocessing (experiment-specific):
     - Remove all rows before the first occurrence of `first_event_value`
-    - Remove Tobii metadata columns
+    - Keep selected Tobii metadata columns
     """
 
     input_tsv = Path(input_tsv)
@@ -121,14 +124,17 @@ def extract_relevant_rows_1(
         "Gaze point left X [DACS mm]",
         "Gaze point left Y [DACS mm]",
         "Gaze point right X [DACS mm]",
-        "Gaze point right Y [DACS mm]"
+        "Gaze point right Y [DACS mm]",
     ]
-
-    cols_to_keep = [c for c in df_trimmed.columns if c not in metadata_cols]
-    df_trimmed = df_trimmed.loc[:, cols_to_keep]
-
+    
+    # keep only columns that actually exist in the dataframe
+    cols_to_keep = [c for c in metadata_cols if c in df_trimmed.columns]
+    
+    df_trimmed = df_trimmed.select(cols_to_keep)
+    
     # ---- save cleaned TSV ----
     df_trimmed.write_csv(output_tsv, separator="\t")
+
 
     print(
         f"[Step 2] {input_tsv.name}: "
@@ -232,4 +238,33 @@ def extract_relevant_rows_2(
 
 
     return baseline_outputs, block_outputs
+
+
+# ---- Helper function ----
+
+
+def swap_decimal_separators(df: pl.DataFrame) -> pl.DataFrame:
+    """
+    Swap decimal separators in all columns of a Polars DataFrame:
+    ',' -> '.'
+    '.' -> ','
+    Works only on string columns or converts other columns to string first.
+    """
+    new_cols = []
+    for col in df.columns:
+        if pl.datatypes.Utf8 in [df[col].dtype]:  # string column
+            new_col = df[col].str.replace_all(",", "__COMMA__") \
+                              .str.replace_all(r"\.", ",") \
+                              .str.replace_all("__COMMA__", ".") \
+                              .alias(col)
+            new_cols.append(new_col)
+        else:
+            # Convert numeric/other column to string, then swap
+            new_col = df[col].cast(pl.Utf8) \
+                              .str.replace_all(",", "__COMMA__") \
+                              .str.replace_all(r"\.", ",") \
+                              .str.replace_all("__COMMA__", ".") \
+                              .alias(col)
+            new_cols.append(new_col)
+    return df.select(new_cols)
 
